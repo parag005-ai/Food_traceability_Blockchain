@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Food Chain</title>
+    <link rel="stylesheet" href="form_theme.css">
+</head>
+
+<body>
+
+    <div class="form-container">
+        <a href="index.html" class="nav-link">Back to Home</a>
+
+        <div class="form-header">
+            <h2>Create Account</h2>
+            <p>Join the traceable food network today</p>
+        </div>
+
+        <form id="signupForm">
+            <div class="form-group">
+                <label for="fullname">Full Name</label>
+                <input type="text" id="fullname" placeholder="John Doe" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" placeholder="name@example.com" required>
+            </div>
+
+            <div class="form-group">
+                <label for="role">Role</label>
+                <select id="role" required>
+                    <option value="" disabled selected>Select your role</option>
+                    <option value="farmer">Farmer</option>
+                    <option value="distributor">Distributor</option>
+                    <option value="pesticideseller">Pesticide Seller</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" class="btn-primary">Sign Up</button>
+        </form>
+
+        <p class="switch-link">
+            Already have an account? <a href="login.html">Log In</a>
+        </p>
+    </div>
+
+    <script>
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fullname = document.getElementById('fullname').value;
+            const email = document.getElementById('email').value;
+            const role = document.getElementById('role').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch('/api/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fullname, email, role, password })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert('Signup successful! Please login.');
+                    window.location.href = 'login.html';
+                } else {
+                    alert('Signup failed: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error signing up:', error);
+                alert('An error occurred during signup.');
+            }
+        });
+    </script>
+</body>
+
+</html>

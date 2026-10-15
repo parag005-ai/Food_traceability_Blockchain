@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Food Chain</title>
+    <link rel="stylesheet" href="form_theme.css">
+</head>
+
+<body>
+
+    <div class="form-container">
+        <a href="index.html" class="nav-link">Back to Home</a>
+
+        <div class="form-header">
+            <h2>Welcome Back</h2>
+            <p>Enter your credentials to access the system</p>
+        </div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" placeholder="name@example.com" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" class="btn-primary">Log In</button>
+        </form>
+
+        <p class="switch-link">
+            Don't have an account? <a href="signup.html">Sign Up</a>
+        </p>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    // Store token and role
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('userRole', data.role);
+
+                    // Redirect based on role
+                    if (data.role === 'farmer') {
+                        window.location.href = 'farmer_input.html';
+                    } else if (data.role === 'distributor') {
+                        window.location.href = 'distributor_input.html';
+                    } else if (data.role === 'pesticideseller') {
+                        window.location.href = 'pesticide_seller_input.html';
+                    } else {
+                        window.location.href = 'index.html';
+                    }
+                } else {
+                    alert('Login failed: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error logging in:', error);
+                alert('An error occurred during login.');
+            }
+        });
+    </script>
+</body>
+
+</html>

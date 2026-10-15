@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Distributor's Dashboard</title>
+  <link rel="stylesheet" href="form_theme.css">
+</head>
+
+<body class="bg-distributor">
+  <div class="form-container">
+    <a href="index.html" class="nav-link">Back to Home</a>
+
+    <div class="form-header">
+      <h2>Distributor Data</h2>
+      <p>Enter transit details for blockchain tracking</p>
+    </div>
+
+    <form id="distributor-input-form">
+      <div class="form-group">
+        <label for="productName">Product Name</label>
+        <input type="text" id="productName" required />
+      </div>
+
+      <div class="form-group">
+        <label for="pickingDate">Date of Stock Arrival</label>
+        <input type="date" id="pickingDate" required />
+      </div>
+
+      <div class="form-group">
+        <label for="location">Location</label>
+        <input type="text" id="location" required />
+      </div>
+
+      <div class="form-group">
+        <label for="farmerAadhar">Farmer's Aadhar No.</label>
+        <input type="text" id="farmerAadhar" required />
+      </div>
+
+      <div class="form-group">
+        <label for="vname">Vendor's Name</label>
+        <input type="text" id="vname" required />
+      </div>
+
+      <button type="submit" class="btn-primary">Submit</button>
+    </form>
+
+    <div id="distributorMessage" class="message-alert"></div>
+  </div>
+
+  <script>
+    async function submitForm(event) {
+      event.preventDefault();
+
+      // Collect form data
+      const formData = {
+        productName: document.getElementById('productName').value,
+        pickingDate: document.getElementById('pickingDate').value,
+        location: document.getElementById('location').value,
+        farmerAadhar: document.getElementById('farmerAadhar').value,
+        vname: document.getElementById('vname').value,
+      };
+
+      try {
+        // Call API to submit data (REST API)
+        const response = await fetch('/api/distributor', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
+
+        const result = await response.json();
+        const messageElement = document.getElementById('distributorMessage');
+
+        if (response.ok) {
+          messageElement.className = 'message success';
+          messageElement.textContent = 'Data submitted successfully!';
+          messageElement.style.display = 'block';
+
+          // ✅ Redirect with the correct Aadhar parameter
+          window.location.href = `qr_display.html?aadhar=${encodeURIComponent(formData.farmerAadhar)}`;
+        } else {
+          messageElement.className = 'message error';
+          messageElement.textContent = 'Failed to submit data.';
+          messageElement.style.display = 'block';
+        }
+
+        // Now, submit the data to the Ethereum smart contract (only if the API submission succeeded)
+        const accounts = await web3.eth.getAccounts();
+        await distributorRegistryContract.methods
+          .submitDistributorData(
+            formData.farmerAadhar,
+            formData.productName,
+            formData.pickingDate,
+            formData.location,
+            formData.vendorName
+          )
+          .send({ from: accounts[0] });
+
+        // Show success message for Ethereum submission
+        messageElement.textContent = '✅ Distributor data successfully submitted to blockchain!';
+        messageElement.className = 'message success';
+        messageElement.style.display = 'block';
+        window.location.href = `qr_display.html?aadhar=${encodeURIComponent(formData.farmerAadhar)}`;
+
+      } catch (error) {
+        console.error('Error:', error);
+        const messageElement = document.getElementById('distributorMessage');
+        messageElement.className = 'message error';
+        messageElement.textContent = '❌ Failed to submit data.';
+        messageElement.style.display = 'block';
+      }
+    }
+
+    // Attach the submit handler to the form
+    document.getElementById('distributor-input-form').addEventListener('submit', submitForm);
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.6.0/dist/web3.min.js"></script>
+
+  <script>
+    let web3;
+    let distributorRegistryContract;
+
+    const contractAddress = "0xD4Fc541236927E2EAf8F27606bD7309C1Fc2cbee"; // Replace with your contract address
+    const contractABI = [
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "string",
+            "name": "farmerAadhar",
+            "type": "string"
+          },
+          {
+            "indexed": false,
+            "internalType": "string",
+            "name": "productName",
+            "type": "string"
+          },
+          {
+            "indexed": false,
+            "internalType": "string",
+            "name": "pickingDate",
+            "type": "string"
+          },
+          {
+            "indexed": false,
+            "internalType": "string",
+            "name": "location",
+            "type": "string"
+          },
+          {
+            "indexed": false,
+            "internalType": "string",
+            "name": "vendorName",
+            "type": "string"
+          }
+        ],
+        "name": "DistributorDataSubmitted",
+        "type": "event"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "string",
+            "name": "farmerAadhar",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "productName",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "pickingDate",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "location",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "vendorName",
+            "type": "string"
+          }
+        ],
+        "name": "submitDistributorData",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "string",
+            "name": "farmerAadhar",
+            "type": "string"
+          }
+        ],
+        "name": "distributorExists",
+        "outputs": [
+          {
+            "internalType": "bool",
+            "name": "",
+            "type": "bool"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "string",
+            "name": "farmerAadhar",
+            "type": "string"
+          }
+        ],
+        "name": "getDistributorData",
+        "outputs": [
+          {
+            "internalType": "string",
+            "name": "productName",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "pickingDate",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "location",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "vendorName",
+            "type": "string"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      }
+    ];
+
+    window.addEventListener('load', () => {
+      // Connect to Ganache's local blockchain
+      web3 = new Web3('http://localhost:7545'); // Ganache default RPC URL
+
+      // Set up the contract
+      distributorRegistryContract = new web3.eth.Contract(contractABI, contractAddress);
+
+      // Optionally, you can log the accounts available on Ganache
+      web3.eth.getAccounts().then(console.log);
+    });
+
+    // Submit the distributor data to the Ethereum smart contract
+    document.getElementById('distributor-input-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const accounts = await web3.eth.getAccounts(); // Get the first account from Ganache
+      const distributorData = {
+        farmerAadhar: document.getElementById('farmerAadhar').value,
+        productName: document.getElementById('productName').value,
+        pickingDate: document.getElementById('pickingDate').value,
+        location: document.getElementById('location').value,
+        vendorName: document.getElementById('vendorName').value,
+      };
+
+      try {
+        await distributorRegistryContract.methods
+          .submitDistributorData(
+            distributorData.farmerAadhar,
+            distributorData.productName,
+            distributorData.pickingDate,
+            distributorData.location,
+            distributorData.vendorName
+          )
+          .send({ from: accounts[0] }); // Send from the first account in Ganache
+
+        const messageElement = document.getElementById('message');
+        messageElement.textContent = '✅ Distributor data submitted successfully!';
+        messageElement.className = 'success';
+        messageElement.style.display = 'block';
+
+        // Redirect to index.html after 2 seconds
+        setTimeout(() => {
+          window.location.href = 'index.html';
+        }, 2000); // Adjust the delay if necessary
+
+      } catch (error) {
+        console.error('Error submitting form:', error);
+        const messageElement = document.getElementById('message');
+        messageElement.textContent = '❌ Failed to submit data.';
+        messageElement.className = 'error';
+        messageElement.style.display = 'block';
+      }
+    });
+
+    // Fetch distributor data by Farmer's Aadhar number
+    async function fetchDistributorData(farmerAadhar) {
+      try {
+        const result = await distributorRegistryContract.methods.getDistributorData(farmerAadhar).call();
+        console.log('Distributor Data:', result);
+
+        // Display distributor data
+        const distributorDetails = document.getElementById('distributorDetails');
+        distributorDetails.innerHTML = ''; // Clear existing data
+
+        distributorDetails.innerHTML = `
+          <p>Product Name: ${result.productName}</p>
+          <p>Picking Date: ${result.pickingDate}</p>
+          <p>Location: ${result.location}</p>
+          <p>Vendor Name: ${result.vendorName}</p>
+        `;
+      } catch (error) {
+        console.error('Error fetching distributor data:', error);
+        const distributorDetails = document.getElementById('distributorDetails');
+        distributorDetails.textContent = '❌ Distributor data not found!';
+      }
+    }
+
+    // Example of how to call the function to fetch data
+    // fetchDistributorData('123456789012'); // Call with a specific Aadhar number
+  </script>
+
+
+</body>
+
+</html>
